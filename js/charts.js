@@ -6,6 +6,10 @@ const charts = (function(context) {
 
     var padd = 8;
 
+    var debug = { cnt: 0 };
+
+    var d=document;
+    var w=window;
 
     const chart = function(id, chartData) {
 
@@ -42,19 +46,45 @@ const charts = (function(context) {
             showGrid(id);
 
             // draw lines
-            showLines(id);
+            drawLines(id);
+
+            w.addEventListener('load', function() { onLoadEvents(id) });
         }
     }
 
 
-    const showLines = function(id) {
+    const onLoadEvents = function(id) {
+        
+    }
+
+
+    var updateZIndex = function(id) {
+        var dst = charts[id].dst;
+
+        var series=dst.getElementsByClassName('chart-series');
+        if(series.length == 1) {
+            return;
+        }
+
+        for(var i=0;i<series.length;i++) {
+            //console.log(i+' '+series[i]);
+            series[i].setAttribute('data-z-index',(i+1));
+
+        }
+    }
+
+
+    const drawLines = function(id) {
 
         var c = charts[id];
+
+        // coordinates precission
+        var coord = {precission:1};
 
         var step = {};
         step.y = (c.view.size().h - (c.offset.t + c.offset.b)) / c.global.grid.amp;
 
-        c.view.g('chart-lines');
+        c.view.g('chart-series-group');
 
         //console.log('step.y = '+c.view.size().h+' - '+(c.offset.t+c.offset.b)+' / '+c.global.amp +' = '+step.y);
         // draw lines
@@ -62,11 +92,34 @@ const charts = (function(context) {
 
             var s = c.series[i];
 
+            var seriesGroup;
             if(s.cls != undefined && s.cls != false) {
-                c.view.g('chart-line ' + s.cls);
+                seriesGroup = c.view.g('chart-series ' + s.cls);
             } else {
-                c.view.g('chart-line');
+                seriesGroup = c.view.g('chart-series');
             }
+
+            seriesGroup.setAttribute('data-z-index', parseInt(i)+1);
+
+            seriesGroup.addEventListener('mouseover',function(){
+
+                var series=c.dst.getElementsByClassName('chart-series');
+                if(series.length == 1) return;
+
+                // get current series z-index
+                var zIndex=parseInt(this.getAttribute('data-z-index'));
+
+                var lastIndex = series.length-1;
+                var lastSeries = series[lastIndex];
+
+                if(zIndex != lastIndex+1) {
+                    // set chart on last place
+                    lastSeries.parentNode.appendChild(this);
+                    // reindex charts z-index
+                    updateZIndex(id);
+                }
+
+            });
 
             if(typeof s.data == 'undefined' || s.data == false) {
                 console.log('Not find series data');
@@ -75,10 +128,16 @@ const charts = (function(context) {
 
             var dots=s.data;
             step.x = (c.view.size().w - (c.offset.l + c.offset.r)) / (dots.length - 1);
-            console.log('dots.length = '+dots.length);
 
-            var prev={x:c.offset.l.toFixed(3), y:(c.view.size().h - c.offset.b).toFixed(3)};
+            var prev={x:0, y:0};
             var d = '';
+
+            if(typeof s.showing == 'undefined') {
+                // set default animation settings
+                s.showing = {
+                    duration:'1s'
+                };
+            }
 
             if(typeof s.label == 'undefined') {
                 s.label = false;
@@ -87,50 +146,109 @@ const charts = (function(context) {
 
             for(var p=0;p<dots.length;p++) {
 
-                //console.log('dots[p] = '+dots[p]+' c.global.grid.min = '+c.global.grid.min);
+                if(dots[p] !== null) {
 
-                var absValue = dots[p] - c.global.grid.min;
+                    var absValue = dots[p] - c.global.grid.min;
+
+                    var y = ((c.view.size().h - c.offset.b) - (absValue * step.y)).toFixed(coord.precission);
+                    var x = (c.offset.l + step.x * p).toFixed(coord.precission);
+
+                    var moveTo=false;
+                    if(p == 0 || (dots[p-1] !== undefined && dots[p-1] === null)) {
+                        // check NULL value
+                        moveTo = true;
+                    }
+
+                    if (moveTo === true) {
+                        d += ' M ' + x + ' ' + y;
+                        prev.x = x;
+                        prev.y = y;
+                    }
+                    //console.log('prev: ');
+                    //console.log(prev);
+
+                    if(s.debug !== undefined && s.debug.coordinates == 'relative') {
+
+                        var dx = step.x.toFixed(coord.precission);
+                        if(moveTo === true) {
+                            dx = 0;
+                        }
+                        var dy = (y - prev.y).toFixed(coord.precission);
+                        d += ' l ' + dx + ' ' + dy;
+                    } else {
+                        d += ' L ' + x + ' ' + y;
+                    }
+
+
+                    if(s.label != false) {
+                        labels.push({x:x,y:y,label:' '});
+                    }
+
+                    prev.x = x;
+                    prev.y = y;
+
+                }
 
                 //console.log('absValue = '+absValue);
-
-                var y = ((c.view.size().h - c.offset.b) - (absValue * step.y)).toFixed(3);
-                var x = (c.offset.l + step.x * p).toFixed(3);
-                if(p==0) {
-                    d = ' M '+x+' '+y;
-                } else {
-                    d += ' L '+x+' '+y;
-                }
-
-                if(s.label != false) {
-                    labels.push({x:x,y:y});
-                }
                 //console.log('bottom: '+(c.view.size().h - c.offset.b));
                 //console.log('absValue = '+absValue+', y = '+y+', d = '+d);
             }
 
             // add line
-            c.view.path(d);
+            var line = c.view.path(d);
+            console.log(line);
+
+            var animate = false;
+            if(s.showing !== false) {
+                var lineLength = line.getTotalLength();
+
+                // create SVG animate
+                animate = draw.node('animate',
+                    {
+                        attributeName:'stroke-dashoffset',
+                        begin:'0s',
+                        dur:s.showing.duration,
+                        repeatCount:'1',
+                        values:lineLength+';0',
+                        fill:'freeze'
+                    }, line
+                );
+                line.setAttribute('stroke-dasharray', lineLength);
+
+            } else {
+                toggleClass('chart-static', line, true);
+            }
+
+            s.line = line;
+
+            // expand hover area
+            c.view.path(d, {class:'line-tracker'});
 
             // show labels (if need)
             if(s.label != false && labels.length) {
 
-                if(s.label == 'bobber') {
+                // grouping labels
+                c.view.g('chart-labels');
 
-                    // grouping labels
-                    c.view.g('chart-labels bobber');
-                    for(var l=0;l<labels.length;l++) {
-                        c.view.circle(labels[l].x,labels[l].y,4);
+                for(var l=0;l<labels.length;l++) {
+                    if(s.label == 'rect') {
+                        var x=labels[l].x;
+                        var y=labels[l].y;
+                        c.view.path('M '+(x-3)+' '+(y-3)+' l 6 0 l 0 6 l -6 0 l 0 -6 Z');
                     }
-                    c.view.prev();
                 }
+
+                c.view.prev();
 
             }
 
-            c.view.prev();
 
+            c.view.prev();
         }
 
         c.view.root();
+
+
     }
 
     const prepare = function(chartId) {
@@ -212,10 +330,10 @@ const charts = (function(context) {
 
         var maxLines = Math.floor((c.view.size().h - (c.offset.t + c.offset.b)) / captionHeight);
 
-        console.log('c.view.size().h = '+c.view.size().h);
-        console.log('c.view.size().h - offset = '+(c.view.size().h - c.offset.t - c.offset.b));
-        console.log('captionHeight = '+captionHeight);
-        console.log('maxYCaptions = '+maxLines);
+        //console.log('c.view.size().h = '+c.view.size().h);
+        //console.log('c.view.size().h - offset = '+(c.view.size().h - c.offset.t - c.offset.b));
+        //console.log('captionHeight = '+captionHeight);
+        //console.log('maxYCaptions = '+maxLines);
 
         var numCaptions=0;
         var rank=false;
@@ -230,22 +348,22 @@ const charts = (function(context) {
 
             var divider=parseFloat(rank);
 
-            console.log('Rank: '+rank);
-            console.log('Divider: '+divider);
+            //console.log('Rank: '+rank);
+            //console.log('Divider: '+divider);
             var res=c.global.amp % divider;
 
             //console.log('Res: '+res);
             var lines = Math.floor(c.global.amp/divider) + 3;
-            console.log('lines = '+lines+' maxLines: '+maxLines);
+            //console.log('lines = '+lines+' maxLines: '+maxLines);
 
             if(lines <= maxLines) {
                 break;
             }
         }
 
-        console.log('c.global.amp: '+c.global.amp+' rank: '+rank);
+        //console.log('c.global.amp: '+c.global.amp+' rank: '+rank);
         // draw lines
-        console.log('c.global.min: '+c.global.min+' c.global.max: '+c.global.max);
+        //console.log('c.global.min: '+c.global.min+' c.global.max: '+c.global.max);
         c.global.grid = {};
 
         c.global.grid.min = Math.ceil(c.global.min / rank) * rank - rank;
@@ -256,13 +374,13 @@ const charts = (function(context) {
             c.global.grid.max += rank;
         }
 
-        console.log('c.global.grid.min = '+c.global.grid.min);
-        console.log('c.global.grid.max = '+c.global.grid.max);
+        //console.log('c.global.grid.min = '+c.global.grid.min);
+        //console.log('c.global.grid.max = '+c.global.grid.max);
 
         c.global.grid.amp = c.global.grid.max - c.global.grid.min;
 
         numCaptions = c.global.grid.amp / rank + 1;
-        console.log("=>>> "+numCaptions+' grid.amp:'+c.global.grid.amp+' '+rank);
+        //console.log("=>>> "+numCaptions+' grid.amp:'+c.global.grid.amp+' '+rank);
 
         var lineHeight = (c.view.size().h - c.offset.t - c.offset.b)/numCaptions;
 
@@ -340,6 +458,8 @@ const charts = (function(context) {
             // H - horizontal line
             // V - vertical line
             // Z - close path (loop)
+            // Curves:
+            // A - arc
 
             var result = {d:d};
             if(attr != undefined && typeof attr === 'object') {
@@ -360,7 +480,7 @@ const charts = (function(context) {
                 attr = {class:cls};
             }
             parent = draw.node('g', attr, parent);
-            return this;
+            return parent;
         }
         const prev = function() {
             parent=parent.parentElement;
@@ -407,6 +527,33 @@ const charts = (function(context) {
             return e;
         }
     }
+
+
+    const toggleClass = function(cls, e, mode) {
+
+        var sCls = e.getAttribute('class');
+        console.log(sCls);
+        if(sCls == null) {
+            sCls = '';
+        }
+
+        var clsList = sCls.replace(/\s{2,}/i, ' ').split(' ').filter(String);
+
+        var index = clsList.indexOf(cls);
+        if(mode === true) {
+            if (index == -1) {
+                clsList.push(cls);
+            }
+        } else if(mode === false) {
+            if (index != -1) {
+                // remove class
+                clsList.splice(index, 1);
+            }
+        }
+
+        e.setAttribute('class', clsList.join(' '));
+    }
+
 
     return {
         chart: chart
