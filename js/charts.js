@@ -54,7 +54,8 @@ const charts = (function(context) {
 
 
     const onLoadEvents = function(id) {
-        
+        var clip = charts[id].clip;
+        clip.setAttribute('width', clip.getAttribute('data-width'));
     }
 
 
@@ -69,7 +70,6 @@ const charts = (function(context) {
         for(var i=0;i<series.length;i++) {
             //console.log(i+' '+series[i]);
             series[i].setAttribute('data-z-index',(i+1));
-
         }
     }
 
@@ -133,10 +133,8 @@ const charts = (function(context) {
             var d = '';
 
             if(typeof s.showing == 'undefined') {
-                // set default animation settings
-                s.showing = {
-                    duration:'1s'
-                };
+                // show animation line on load page
+                s.showing = true;
             }
 
             if(typeof s.label == 'undefined') {
@@ -199,24 +197,10 @@ const charts = (function(context) {
             console.log(line);
 
             var animate = false;
-            if(s.showing !== false) {
-                var lineLength = line.getTotalLength();
-
-                // create SVG animate
-                animate = draw.node('animate',
-                    {
-                        attributeName:'stroke-dashoffset',
-                        begin:'0s',
-                        dur:s.showing.duration,
-                        repeatCount:'1',
-                        values:lineLength+';0',
-                        fill:'freeze'
-                    }, line
-                );
-                line.setAttribute('stroke-dasharray', lineLength);
-
-            } else {
+            if(s.showing === false) {
                 toggleClass('chart-static', line, true);
+            } else {
+                seriesGroup.setAttribute('clip-path', 'url(#'+id+'-clip-boundary)');
             }
 
             s.line = line;
@@ -234,7 +218,7 @@ const charts = (function(context) {
                     if(s.label == 'rect') {
                         var x=labels[l].x;
                         var y=labels[l].y;
-                        c.view.path('M '+(x-3)+' '+(y-3)+' l 6 0 l 0 6 l -6 0 l 0 -6 Z');
+                        c.view.path('M '+(x-(padd/2))+' '+(y-(padd/2))+' l '+padd+' 0 l 0 '+padd+' l '+(-1*padd)+' 0 l 0 '+(-1*padd)+' Z');
                     }
                 }
 
@@ -315,7 +299,7 @@ const charts = (function(context) {
         //console.log('captionHeight = '+captionHeight);
 
         // chart background
-        var bg = c.view.rect(c.offset.l, c.offset.t, c.view.size().w - (c.offset.l + c.offset.r), 0, 'plot-background');
+        var bg = c.view.rect(c.offset.l, c.offset.t, c.view.size().w - (c.offset.l + c.offset.r), 0, {class:'plot-background'});
 
         if(typeof c.title != 'undefined') {
             var title = c.view.text(0, 0, c.title, 'title');
@@ -327,6 +311,14 @@ const charts = (function(context) {
         // update top bg position
         bg.setAttribute('y', c.offset.t);
         bg.setAttribute('height', c.view.size().h - (c.offset.b + c.offset.t));
+
+        // clip path
+        var clip = {l:c.offset.l-padd, t:c.offset.t + padd, w:c.view.size().w-(c.offset.l+c.offset.r)+padd*2, h:c.view.size().h-(c.offset.t+c.offset.b)+padd*2};
+
+        var clipRect = c.view.defs().clipPath({id:chartId+'-clip-boundary',class:'chart-clip'}).rect(clip.l,clip.t,0,clip.h,{'data-width':clip.w});
+        c.clip = clipRect;
+        c.view.root();
+
 
         var maxLines = Math.floor((c.view.size().h - (c.offset.t + c.offset.b)) / captionHeight);
 
@@ -432,8 +424,12 @@ const charts = (function(context) {
             return {w:w,h:h};
         }
 
-        const rect = function(x,y,w,h,cls) {
-            return draw.node('rect', {x:x,y:y,width:w,height:h,class:cls}, parent);
+        const rect = function(x,y,w,h,attr) {
+            var result = {x:x,y:y,width:w,height:h};
+            if(attr != undefined && typeof attr === 'object') {
+                result = Object.assign(result,attr);
+            }
+            return draw.node('rect', result, parent);
         }
         const line = function(x1,y1,x2,y2,cls) {
             return draw.node('line', {x1:x1,y1:y1,x2:x2,y2:y2,class:cls}, parent);
@@ -474,6 +470,14 @@ const charts = (function(context) {
             }
             return draw.node('text', attr, parent, string);
         }
+        const defs = function() {
+            parent = draw.node('defs', null, parent);
+            return this;
+        }
+        const clipPath = function(attr) {
+            parent = draw.node('clipPath', attr, parent);
+            return this;
+        }
         const group = function(cls) {
             var attr = false;
             if(cls != undefined) {
@@ -499,6 +503,8 @@ const charts = (function(context) {
             circle: circle,
             path: path,
             text: text,
+            defs: defs,
+            clipPath: clipPath,
             // grouping
             g: group,
             // get current parent element
@@ -532,7 +538,7 @@ const charts = (function(context) {
     const toggleClass = function(cls, e, mode) {
 
         var sCls = e.getAttribute('class');
-        console.log(sCls);
+
         if(sCls == null) {
             sCls = '';
         }
