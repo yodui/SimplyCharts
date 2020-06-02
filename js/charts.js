@@ -101,6 +101,7 @@ const charts = (function(context) {
 
             seriesGroup.setAttribute('data-z-index', parseInt(i)+1);
 
+
             seriesGroup.addEventListener('mouseover',function(){
 
                 var series=c.dst.getElementsByClassName('chart-series');
@@ -118,6 +119,9 @@ const charts = (function(context) {
                     // reindex charts z-index
                     updateZIndex(id);
                 }
+            });
+
+            seriesGroup.addEventListener('mouseout',function(){
 
             });
 
@@ -213,13 +217,46 @@ const charts = (function(context) {
 
                 // grouping labels
                 c.view.g('chart-labels');
+                var hasHalo = false;
 
                 for(var l=0;l<labels.length;l++) {
-                    if(s.label == 'rect') {
-                        var x=labels[l].x;
-                        var y=labels[l].y;
-                        c.view.path('M '+(x-(padd/2))+' '+(y-(padd/2))+' l '+padd+' 0 l 0 '+padd+' l '+(-1*padd)+' 0 l 0 '+(-1*padd)+' Z');
+
+                    var x=labels[l].x;
+                    var y=labels[l].y;
+
+                    if(hasHalo === false) {
+                        // add halo
+                        s.halo = setHalo(c,s,x,y);
+                        hasHalo = true;
                     }
+
+                    if(s.label == 'circle') {
+
+                        var d = 'M '+x+' '+y+' m -'+padd/2+' 0 a '+padd/2+' '+padd/2+' 0 1 0 '+padd+' 0 a '+padd/2+' '+padd/2+' 0 1 0 -'+padd+' 0';
+
+                    } else if(s.label == 'rect') {
+
+                        var d = 'M '+(x-(padd/2))+' '+(y-(padd/2))+' l '+padd+' 0 l 0 '+padd+' l '+(-1*padd)+' 0 l 0 '+(-1*padd)+' Z';
+
+                    } else {
+                        break;
+                    }
+
+                    var path = c.view.path(d);
+
+                    // add hover event
+                    path.addEventListener('mouseover', function(_c,_s,_x,_y){
+                            return function() { setHalo(_c,_s,_x,_y) }
+                        } (c,s,x,y)
+                    );
+                    // add mouseout event (hide halo)
+                    path.addEventListener('mouseout',function(_s){
+                            return function() { _s.halo.setAttribute('visibility','hidden'); }
+                        } (s)
+                    );
+
+                    path.setAttribute('data-x', x);
+                    path.setAttribute('data-y', y);
                 }
 
                 c.view.prev();
@@ -232,7 +269,22 @@ const charts = (function(context) {
 
         c.view.root();
 
+    }
 
+    const setHalo = function(chart, series, x, y) {
+        if(series.label == 'rect') {
+            var d = 'M '+(x-padd)+' '+(y-padd)+' l '+padd*2+' 0 l 0 '+padd*2+' l '+(-1*padd*2)+' 0 l 0 '+(-1*padd*2)+' Z';
+        } else if(series.label == 'circle') {
+            var d = 'M '+x+' '+y+' m -'+padd+' 0 a '+padd+' '+padd+' 0 1 0 '+(padd*2)+' 0 a '+padd+' '+padd+' 0 1 0 -'+(padd*2)+' 0';
+        } else {
+            return false;
+        }
+        if(series.halo == undefined) {
+            return chart.view.path(d, {class:'chart-halo',visibility:'hidden'});
+        }
+        // move halo and show
+        series.halo.setAttribute('d', d);
+        series.halo.setAttribute('visibility','visible');
     }
 
     const prepare = function(chartId) {
@@ -315,8 +367,7 @@ const charts = (function(context) {
         // clip path
         var clip = {l:c.offset.l-padd, t:c.offset.t + padd, w:c.view.size().w-(c.offset.l+c.offset.r)+padd*2, h:c.view.size().h-(c.offset.t+c.offset.b)+padd*2};
 
-        var clipRect = c.view.defs().clipPath({id:chartId+'-clip-boundary',class:'chart-clip'}).rect(clip.l,clip.t,0,clip.h,{'data-width':clip.w});
-        c.clip = clipRect;
+        c.clip = c.view.defs().clipPath({id:chartId+'-clip-boundary',class:'chart-clip'}).rect(clip.l,clip.t,0,clip.h,{'data-width':clip.w});
         c.view.root();
 
 
