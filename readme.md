@@ -1,4 +1,4 @@
-# SimplyCharts.js - simple JavaScript Charts
+# SimplyCharts.js
 Very simple JavaScript -> SVG charts for all developers & designers.
 
 ## Documentation

@@ -60,13 +60,6 @@
             fill:#c1c1c1;
         }
 
-        .chart .chart-series-group .chart-series.active {
-            opacity: 1;
-        }
-
-        .chart .chart-series-group .chart-series.active {
-            opacity: 1;
-        }
 
         .chart .chart-series {
             fill:none;
@@ -88,17 +81,37 @@
             opacity: 0.2;
         }
 
+        .chart .chart-tooltip {
+            white-space: nowrap;
+            opacity: 0.9;
+            background: white;
+            stroke: gray;
+            stroke-width: 1;
+            fill:white;
+            transform-origin: 0 0;
+            transform: translate(200px,100px);
+        }
+
+        .chart .chart-tooltip text {
+            stroke:none;
+            fill:black;
+            font-size: 13px;
+        }
+
         .chart .chart-series .chart-labels {
             stroke-width:0px;
         }
 
-        .chart .chart-series .chart-labels > path {
+        .chart .chart-series .chart-labels > path:not(.chart-halo) {
+            transition: all 0.15s ease-in-out;
+            -webkit-transition: all 0.15s ease-in-out;
         }
 
         .chart .chart-series .chart-labels > path:hover {
-            stroke-width:1px;
             stroke:white;
             stroke-opacity:1;
+            stroke-width: 1;
+            transform: scale(1.4);
         }
 
         .chart .chart-series.line1 {

@@ -87,6 +87,7 @@ const charts = (function(context) {
         c.view.g('chart-series-group');
 
         //console.log('step.y = '+c.view.size().h+' - '+(c.offset.t+c.offset.b)+' / '+c.global.amp +' = '+step.y);
+
         // draw lines
         for(var i in c.series) {
 
@@ -198,7 +199,6 @@ const charts = (function(context) {
 
             // add line
             var line = c.view.path(d);
-            console.log(line);
 
             var animate = false;
             if(s.showing === false) {
@@ -226,32 +226,36 @@ const charts = (function(context) {
 
                     if(hasHalo === false) {
                         // add halo
-                        s.halo = setHalo(c,s,x,y);
+                        s.halo = showHalo(c,s,x,y);
                         hasHalo = true;
                     }
 
                     if(s.label == 'circle') {
-
                         var d = 'M '+x+' '+y+' m -'+padd/2+' 0 a '+padd/2+' '+padd/2+' 0 1 0 '+padd+' 0 a '+padd/2+' '+padd/2+' 0 1 0 -'+padd+' 0';
-
                     } else if(s.label == 'rect') {
-
                         var d = 'M '+(x-(padd/2))+' '+(y-(padd/2))+' l '+padd+' 0 l 0 '+padd+' l '+(-1*padd)+' 0 l 0 '+(-1*padd)+' Z';
-
                     } else {
                         break;
                     }
 
-                    var path = c.view.path(d);
+                    var path = c.view.path(d, {'transform-origin': x+' '+y});
 
-                    // add hover event
-                    path.addEventListener('mouseover', function(_c,_s,_x,_y){
-                            return function() { setHalo(_c,_s,_x,_y) }
+                    // add hover label events
+                    path.addEventListener('mouseover', function(_chart,_series,_x,_y){
+                            return function() {
+                                // set halo position and show it
+                                showHalo(_chart,_series,_x,_y);
+                                // show label info popup
+
+                            }
                         } (c,s,x,y)
                     );
-                    // add mouseout event (hide halo)
+                    // add label mouseout event
                     path.addEventListener('mouseout',function(_s){
-                            return function() { _s.halo.setAttribute('visibility','hidden'); }
+                            return function() {
+                                // hide halo
+                                _s.halo.setAttribute('visibility','hidden');
+                            }
                         } (s)
                     );
 
@@ -269,22 +273,66 @@ const charts = (function(context) {
 
         c.view.root();
 
+        // prepare tooltip for showing in future
+        // create tooltip node
+        createTooltip(c);
+
     }
 
-    const setHalo = function(chart, series, x, y) {
-        if(series.label == 'rect') {
-            var d = 'M '+(x-padd)+' '+(y-padd)+' l '+padd*2+' 0 l 0 '+padd*2+' l '+(-1*padd*2)+' 0 l 0 '+(-1*padd*2)+' Z';
-        } else if(series.label == 'circle') {
-            var d = 'M '+x+' '+y+' m -'+padd+' 0 a '+padd+' '+padd+' 0 1 0 '+(padd*2)+' 0 a '+padd+' '+padd+' 0 1 0 -'+(padd*2)+' 0';
-        } else {
+
+    const createTooltip = function(c) {
+        c.view.g('chart-tooltip');
+        // cr = corner radius
+        var cr=3;
+        var d = 'M 0 0 h 100 a'+cr+','+cr+' 0 0 1 '+cr+','+cr+' v30 a'+cr+','+cr+' 0 0 1 -'+cr+','+cr+' h-100 a'+cr+','+cr+' 0 0 1 -'+cr+',-'+cr+' v-30 a'+cr+','+cr+' 0 0 1 '+cr+',-'+cr+' z';
+        var tooltip = c.view.path(d);
+        var seriesLabel = c.view.text(0,0);
+
+        var seriesMarker = c.view.tspan(seriesLabel,{'x':6});
+        seriesMarker.innerHTML = '●';
+        var seriesName = c.view.tspan(seriesLabel,{dx:4});
+        seriesName.innerHTML = 'Series name';
+        var labelValue = c.view.tspan(seriesLabel,{dx:4});
+        labelValue.innerHTML = '555.55';
+
+        // move text on tooltip
+        var tBox = seriesLabel.getBBox();
+        seriesLabel.setAttribute('y',tBox.height + padd/2);
+        // update text position
+        tooltip.set
+        c.view.prev();
+    }
+
+    const showHalo = function(chart, series, x, y) {
+
+        var unit = padd*1.2;
+        var d = haloShape(x,y,unit,series.label);
+
+        if(d === false) {
             return false;
         }
+
         if(series.halo == undefined) {
             return chart.view.path(d, {class:'chart-halo',visibility:'hidden'});
+        } else {
+            // move halo and show
+            series.halo.setAttribute('d', d);
+            series.halo.setAttribute('visibility','visible');
         }
-        // move halo and show
-        series.halo.setAttribute('d', d);
-        series.halo.setAttribute('visibility','visible');
+
+    }
+
+    const haloShape = function(x,y,unit,type) {
+        var d=false;
+        switch(type) {
+            case 'rect':
+                d = 'M '+(x-unit).toFixed(2)+' '+(y-unit).toFixed(2)+' l '+(unit*2)+' 0 l 0 '+(unit*2)+' l '+(-1*unit*2)+' 0 l 0 '+(-1*unit*2)+' Z';
+                break;
+            case 'circle':
+                d = 'M '+x+' '+y+' m -'+unit+' 0 a '+unit+' '+unit+' 0 1 0 '+(unit*2)+' 0 a '+unit+' '+unit+' 0 1 0 -'+(unit*2)+' 0';
+                break;
+        }
+        return d;
     }
 
     const prepare = function(chartId) {
@@ -344,7 +392,7 @@ const charts = (function(context) {
         var eCaption = c.view.text(0,0,c.global.amp,'caption-y');
 
         c.offset.l = eCaption.getBBox().width + padd * 4;
-        c.offset.r = padd;
+        c.offset.r = padd * 2;
 
         // calculate maximum captions on Y axis
         var captionHeight = padd + eCaption.getBBox().height;
@@ -365,7 +413,7 @@ const charts = (function(context) {
         bg.setAttribute('height', c.view.size().h - (c.offset.b + c.offset.t));
 
         // clip path
-        var clip = {l:c.offset.l-padd, t:c.offset.t + padd, w:c.view.size().w-(c.offset.l+c.offset.r)+padd*2, h:c.view.size().h-(c.offset.t+c.offset.b)+padd*2};
+        var clip = {l:c.offset.l - padd*2, t:c.offset.t + padd, w:c.view.size().w - (c.offset.l + c.offset.r) + padd*4, h:c.view.size().h-(c.offset.t+c.offset.b)+padd*2};
 
         c.clip = c.view.defs().clipPath({id:chartId+'-clip-boundary',class:'chart-clip'}).rect(clip.l,clip.t,0,clip.h,{'data-width':clip.w});
         c.view.root();
@@ -519,7 +567,14 @@ const charts = (function(context) {
             if(cls != undefined) {
                 attr = Object.assign({class:cls},attr);
             }
-            return draw.node('text', attr, parent, string);
+            var txt = draw.node('text', attr, parent);
+            if(string != undefined) {
+                txt.innerHTML = string;
+            }
+            return txt;
+        }
+        const tspan = function(parent, attr) {
+            return draw.node('tspan', attr, parent);
         }
         const defs = function() {
             parent = draw.node('defs', null, parent);
@@ -554,6 +609,7 @@ const charts = (function(context) {
             circle: circle,
             path: path,
             text: text,
+            tspan: tspan,
             defs: defs,
             clipPath: clipPath,
             // grouping
