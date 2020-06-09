@@ -65,6 +65,15 @@
             fill:none;
             stroke-linecap:round;
             stroke-linejoin:round;
+            transition: opacity 0.2s;
+        }
+
+        .chart .chart-series-group:hover .chart-series {
+            opacity: 0.45;
+        }
+
+        .chart .chart-series-group:hover .chart-series:last-child {
+            opacity: 1;
         }
 
         .chart .chart-series > path {
@@ -89,7 +98,6 @@
             stroke-width: 1;
             fill:white;
             transform-origin: 0 0;
-            transform: translate(200px,100px);
         }
 
         .chart .chart-tooltip text {
@@ -122,22 +130,6 @@
             fill:#ee8582;
         }
 
-
-        @keyframes zoom {
-            from {
-                transform: scale(1);
-            }
-            to {
-                transform: scale(1);
-            }
-        }
-
-        @keyframes dash {
-            to {
-                stroke-dashoffset: 100%;
-            }
-        }
-
         .chart .chart-series.line2 {
             stroke: #65ea54;
         }
@@ -152,6 +144,14 @@
 
         .chart .chart-series.line3 .chart-labels {
             fill: #dd67ea;
+        }
+
+        .chart .chart-series.line4 {
+            stroke: #eabb5a;
+        }
+
+        .chart .chart-series.line4 .chart-labels {
+            fill: #eabb5a;
         }
 
 
@@ -172,15 +172,15 @@
 
     charts.chart('graph1',
             {
-                title: 'Deposit',
+                title: 'Finances',
                 axis: {
                     x: 'Dates',
                     y: 'Amount, USD'
                 },
                 series: [
-                    {name:'line1', debug:{coordinates:'relative'}, label:'rect', cls:'line1', data:[null, -2, -17, 0, 0, null, 1, 1, -3, 2, 1, 9, null, null, 11, 14, 15, 12, 2, 0, 0, 21, 15, 6, 8, -4, 3, 2, null]},
-                    {name:'line2', showing:false, label:'circle', cls:'line2', data:[ 5,15,59,14,27,25,15,  6,  8, 17, 21,15,11, 9,19, 2, 0]},
-                    {name:'line3', cls:'line3', label:'rect', data:[ 9,11,19,61,-1,0,1,null,0,7,null,1,null,45, 4, 12,17]}
+                    {name:'Deposit', debug:{coordinates:'relative'}, label:'rect', cls:'line1', data:[null, -2, -17, 0, 0, null, 1, 1, -3, 2, 1, 9, null, null, 11, 14, 15, 12, 2, 0, 0, 21, 15, 6, 8, -4, 3, 2, null]},
+                    {name:'Withdraw', showing:false, label:'circle', cls:'line2', data:[ 5,15,59,14,27,25,15,  6,  8, 17, 21,15,11, 9,19, 2, 0], postfix:'%'},
+                    {name:'Accounts', cls:'line3', label:'rect', data:[ 9,11,19,61,-1,0,1,null,0,7,null,1,null,45, 4, 12,17], postfix:'$'}
                 ]
             }
     );
@@ -188,7 +188,8 @@
     charts.chart('graph2', {
         title: 'test chart',
         series: [
-            { cls:'line1', label:'circle', data:[null,7,null,1,null,2,null,3,2,3,1,0,1.5,-0.2,9,5,-1,null,2,-3,null,1,null,3,13,12,6,-1,null,2,5,null,8,-2,-10,7,19,0,1,2,-1,12,21] }
+            { cls:'line1', label:'circle', data:[null,7,null,1,null,2,null,3,2,3,1,0,1.5,-0.2,9,5,-1,null,2,-3,null,1,null,3,13,12,6,-1,null,2,5,null,8,-2,-10,7,19,0,1,2,-1,12,21] },
+            { cls:'line4', data:[5,12,19,21,27,12,17,29,35,21,16,17,null,null,-4,-7.5,-17,-18,-12.5,-4.3,-7] }
         ]
     });
 

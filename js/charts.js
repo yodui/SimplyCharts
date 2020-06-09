@@ -184,7 +184,7 @@ const charts = (function(context) {
 
 
                     if(s.label != false) {
-                        labels.push({x:x,y:y,label:' '});
+                        labels.push({x:x,y:y,value:dots[p]});
                     }
 
                     prev.x = x;
@@ -241,26 +241,29 @@ const charts = (function(context) {
                     var path = c.view.path(d, {'transform-origin': x+' '+y});
 
                     // add hover label events
-                    path.addEventListener('mouseover', function(_chart,_series,_x,_y){
+                    path.addEventListener('mouseover', function(_chart,_s,_x,_y){
                             return function() {
                                 // set halo position and show it
-                                showHalo(_chart,_series,_x,_y);
+                                showHalo(_chart,_s,_x,_y);
+                                var value=this.getAttribute('data-value');
                                 // show label info popup
-
+                                var color = w.getComputedStyle(this).getPropertyValue("stroke");
+                                updateTooltip(_chart,_x,_y,_s.name,value,_s.label,color);
                             }
                         } (c,s,x,y)
                     );
                     // add label mouseout event
-                    path.addEventListener('mouseout',function(_s){
+                    path.addEventListener('mouseout',function(_chart,_s){
                             return function() {
                                 // hide halo
                                 _s.halo.setAttribute('visibility','hidden');
+                                // hide label
+                                _chart.tooltip.setAttribute('visibility','hidden');
                             }
-                        } (s)
+                        } (c,s)
                     );
 
-                    path.setAttribute('data-x', x);
-                    path.setAttribute('data-y', y);
+                    path.setAttribute('data-value', labels[l].value);
                 }
 
                 c.view.prev();
@@ -280,27 +283,68 @@ const charts = (function(context) {
     }
 
 
-    const createTooltip = function(c) {
-        c.view.g('chart-tooltip');
+    const updateTooltip = function(c,x,y,seriesName,value,labelType,color) {
+
+        var tooltip = c.tooltip;
+
+        var marker='●';
+        switch(labelType) {
+            case 'circle':
+                marker = '●';
+                break;
+            case 'rect':
+                marker = '■';
+                break;
+            case 'triangle':
+                marker = '▲';
+                break;
+        }
+
+        // set color
+        console.log(color);
+        // set content and color on marker
+        tooltip.marker.style.fill = color;
+        tooltip.marker.innerHTML = marker;
+
+        console.log(seriesName);
+        if(seriesName != undefined) {
+            tooltip.seriesName.innerHTML = seriesName+':';
+        }
+        tooltip.value.innerHTML = value;
+
+        // set position text on tooltip
+        var tBox = tooltip.text.getBBox();
+        tooltip.text.setAttribute('y',tBox.height + padd);
+
+        var wSize = {w:tBox.width+padd*2,h:tBox.height+padd*2};
+
         // cr = corner radius
         var cr=3;
-        var d = 'M 0 0 h 100 a'+cr+','+cr+' 0 0 1 '+cr+','+cr+' v30 a'+cr+','+cr+' 0 0 1 -'+cr+','+cr+' h-100 a'+cr+','+cr+' 0 0 1 -'+cr+',-'+cr+' v-30 a'+cr+','+cr+' 0 0 1 '+cr+',-'+cr+' z';
-        var tooltip = c.view.path(d);
-        var seriesLabel = c.view.text(0,0);
+        var half = (wSize.w/2).toFixed(2);
+        var d = 'M 0 0 h '+wSize.w+' a'+cr+','+cr+' 0 0 1 '+cr+','+cr+' v'+wSize.h+' a'+cr+','+cr+' 0 0 1 -'+cr+','+cr+' h-'+(half-padd)+' l -'+padd+' '+padd+' l -'+padd+' -'+padd+' h-'+(half-padd)+' a'+cr+','+cr+' 0 0 1 -'+cr+',-'+cr+' v-'+wSize.h+' a'+cr+','+cr+' 0 0 1 '+cr+',-'+cr+' z';
 
-        var seriesMarker = c.view.tspan(seriesLabel,{'x':6});
-        seriesMarker.innerHTML = '●';
-        var seriesName = c.view.tspan(seriesLabel,{dx:4});
-        seriesName.innerHTML = 'Series name';
-        var labelValue = c.view.tspan(seriesLabel,{dx:4});
-        labelValue.innerHTML = '555.55';
+        // set tooltip position
+        var t={x:false,y:false};
 
-        // move text on tooltip
-        var tBox = seriesLabel.getBBox();
-        seriesLabel.setAttribute('y',tBox.height + padd/2);
-        // update text position
-        tooltip.set
-        c.view.prev();
+        t.x = (x - wSize.w/2).toFixed(2);
+        t.y = (y - (wSize.h + padd*3)).toFixed(2);
+        tooltip.style.stroke = color;
+        tooltip.setAttribute('transform','translate('+t.x+','+t.y+')');
+
+        // update wrapper size
+        tooltip.setAttribute('visibility','visible');
+        tooltip.wrapper.setAttribute('d',d);
+    }
+
+
+    const createTooltip = function(c) {
+        c.tooltip = c.view.g('chart-tooltip');
+        c.tooltip.wrapper = c.view.path('');
+        c.tooltip.text = c.view.text(0,0);
+        c.tooltip.marker = c.view.tspan({'x':6}, c.tooltip.text);
+        c.tooltip.seriesName = c.view.tspan({dx:4}, c.tooltip.text);
+        c.tooltip.value = c.view.tspan({dx:4}, c.tooltip.text);
+        c.tooltip.value.style.fontWeight = 'bold';
     }
 
     const showHalo = function(chart, series, x, y) {
@@ -573,7 +617,7 @@ const charts = (function(context) {
             }
             return txt;
         }
-        const tspan = function(parent, attr) {
+        const tspan = function(attr, parent) {
             return draw.node('tspan', attr, parent);
         }
         const defs = function() {
@@ -641,6 +685,10 @@ const charts = (function(context) {
         }
     }
 
+    HTMLElement.prototype.toggleClass = function() {
+        console.log('Toggle classs...');
+        console.log(this);
+    }
 
     const toggleClass = function(cls, e, mode) {
 
@@ -667,9 +715,9 @@ const charts = (function(context) {
         e.setAttribute('class', clsList.join(' '));
     }
 
-
     return {
         chart: chart
     };
 
 })(this);
+
