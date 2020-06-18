@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Simply charts</title>
-    <script type="text/javascript" src="/js/charts.js"></script>
+    <script type="text/javascript" src="/src/charts.js"></script>
     <style>
         body {
             box-sizing: border-box;
@@ -98,6 +98,7 @@
             stroke-width: 1;
             fill:white;
             transform-origin: 0 0;
+            transition: 0.2s;
         }
 
         .chart .chart-tooltip text {
@@ -170,7 +171,7 @@
 
 <script>
 
-    charts.chart('graph1',
+    var chart1 = Charts.line('graph1',
             {
                 title: 'Finances',
                 axis: {
@@ -185,13 +186,19 @@
             }
     );
 
-    charts.chart('graph2', {
+    var chart2 = Charts.line('graph2', {
         title: 'test chart',
         series: [
             { cls:'line1', label:'circle', data:[null,7,null,1,null,2,null,3,2,3,1,0,1.5,-0.2,9,5,-1,null,2,-3,null,1,null,3,13,12,6,-1,null,2,5,null,8,-2,-10,7,19,0,1,2,-1,12,21] },
-            { cls:'line4', data:[5,12,19,21,27,12,17,29,35,21,16,17,null,null,-4,-7.5,-17,-18,-12.5,-4.3,-7] }
+            { cls:'line4', data:[5,12,19,21,27,12,17,29,35,21,16,17,null,null,-4,-7.5,-17,-18,-12.5,-4.3,-7,-5,-11,-16,-8] }
         ]
     });
+
+    chart1.activateLabel(2);
+    chart1.activateLabel(17);
+
+    chart2.activateLabel(6);
+
 
 
 </script>
