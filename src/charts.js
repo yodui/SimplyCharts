@@ -14,7 +14,7 @@
 
 }(this, function () {
 
-    var Charts = {
+    const Charts = {
         version: '0.1',
         list: []
     };
@@ -23,27 +23,26 @@
     (function(root, Charts){
         'use strict';
 
-        var w = root.window;
-        var d = root.document;
+        const w = root.window;
+        const d = root.document;
 
-        var padd = 8;
-
+        const padd = 8;
 
         function layout(id) {
 
-            var w;
-            var h;
+            let w;
+            let h;
 
             // current parent element
-            var parent = false;
+            let parent = false;
 
-            var container = d.createElement('div');
+            let container = d.createElement('div');
             container.setAttribute('class','chart-container');
 
-            var dst = d.getElementById(id);
+            let dst = d.getElementById(id);
             dst.appendChild(container);
 
-            var svg = d.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            const svg = d.createElementNS('http://www.w3.org/2000/svg', 'svg');
             svg.setAttribute('class','chart');
 
             container.appendChild(svg);
@@ -66,7 +65,7 @@
             }
 
             const rect = function(x,y,w,h,attr) {
-                var result = {x:x,y:y,width:w,height:h};
+                let result = {x:x,y:y,width:w,height:h};
                 if(attr != undefined && typeof attr === 'object') {
                     result = Object.assign(result,attr);
                 }
@@ -78,7 +77,7 @@
             }
 
             const circle = function(cx,cy,r,cls) {
-                var result = {cx:cx,cy:cy,r:r};
+                let result = {cx:cx,cy:cy,r:r};
 
                 if(typeof r == 'undefined') {
                     delete result.r;
@@ -174,7 +173,7 @@
         function prepare(data) {
 
             // preparing lines data
-            var series=data.series;
+            let series=data.series;
 
             if(series == false) {
                 return false;
@@ -187,19 +186,19 @@
                 return false;
             }
 
-            var maxPoints = 0;
+            let maxPoints = 0;
 
-            for(var s in series) {
+            for(let s in series) {
 
-                var d=series[s];
+                const d=series[s];
 
                 if(typeof d.data == 'undefined') {
                     continue;
                 }
 
                 // get amplitude
-                var min=Math.min.apply(Math, d.data);
-                var max=Math.max.apply(Math, d.data);
+                const min=Math.min.apply(Math, d.data);
+                const max=Math.max.apply(Math, d.data);
 
                 series[s].min = min;
                 series[s].max = max;
@@ -223,7 +222,7 @@
 
         function drawGrid(id) {
 
-            var c = Charts.list[id];
+            const c = Charts.list[id];
 
             if(c.data.series == false) {
                 return false;
@@ -232,20 +231,20 @@
             c.data.global.amp = c.data.global.max - c.data.global.min;
 
             // calculate left offset from captions
-            var eCaption = c.layout.text(0,0,c.data.global.amp,'caption-y');
+            const eCaption = c.layout.text(0,0,c.data.global.amp,'caption-y');
 
             c.offset.l = eCaption.getBBox().width + padd * 4;
             c.offset.r = padd * 2;
 
             // calculate maximum captions on Y axis
-            var captionHeight = padd + eCaption.getBBox().height;
+            const captionHeight = padd + eCaption.getBBox().height;
 
             // chart background
-            var bg = c.layout.rect(c.offset.l, c.offset.t, c.layout.size().w - (c.offset.l + c.offset.r), 0, {class:'plot-background'});
+            const bg = c.layout.rect(c.offset.l, c.offset.t, c.layout.size().w - (c.offset.l + c.offset.r), 0, {class:'plot-background'});
 
             if(typeof c.title != 'undefined') {
-                var title = c.layout.text(0, 0, c.title, 'title');
-                var titleHeight = title.getBBox().height;
+                const title = c.layout.text(0, 0, c.title, 'title');
+                const titleHeight = title.getBBox().height;
                 title.setAttribute('y',titleHeight);
                 c.offset.t = titleHeight + padd;
             }
@@ -255,7 +254,7 @@
             bg.setAttribute('height', c.layout.size().h - (c.offset.b + c.offset.t));
 
             // clip path
-            var clip = {
+            const clip = {
                 l:c.offset.l - padd*2,
                 t:c.offset.t + padd,
                 w:c.layout.size().w - (c.offset.l + c.offset.r) + padd*4,
@@ -270,24 +269,24 @@
             c.layout.root();
 
 
-            var maxLines = Math.floor((c.layout.size().h - (c.offset.t + c.offset.b)) / captionHeight);
+            const maxLines = Math.floor((c.layout.size().h - (c.offset.t + c.offset.b)) / captionHeight);
 
-            var numCaptions=0;
-            var rank=false;
+            let numCaptions=0;
+            let rank=false;
 
-            for(var scale=0;scale < 10;scale++) {
+            for(let scale=0;scale < 10;scale++) {
 
                 rank=0.01;
 
-                for(var r=0;r<scale;r++){
+                for(let r=0;r<scale;r++){
                     rank *= 10;
                 }
 
-                var divider=parseFloat(rank);
+                const divider=parseFloat(rank);
 
-                var res=c.data.global.amp % divider;
+                let res = c.data.global.amp % divider;
 
-                var lines = Math.floor(c.data.global.amp/divider) + 3;
+                let lines = Math.floor(c.data.global.amp/divider) + 3;
 
                 if(lines <= maxLines) {
                     break;
@@ -309,13 +308,13 @@
 
             numCaptions = c.data.global.grid.amp / rank + 1;
 
-            var lineHeight = (c.layout.size().h - c.offset.t - c.offset.b)/numCaptions;
+            const lineHeight = (c.layout.size().h - c.offset.t - c.offset.b)/numCaptions;
 
             c.layout.g({class:'chart-grid'});
 
-            for(var l=0;l<numCaptions;l++) {
-                var caption = c.data.global.grid.min + l * rank;
-                var captionY = c.layout.size().h - c.offset.b - l * lineHeight - lineHeight/2;
+            for(let l=0;l<numCaptions;l++) {
+                const caption = c.data.global.grid.min + l * rank;
+                const captionY = c.layout.size().h - c.offset.b - l * lineHeight - lineHeight/2;
                 c.layout.line(c.offset.l, captionY, c.layout.size().w - c.offset.r, captionY, 'grid-line');
                 c.layout.text(c.offset.l - padd * 2, captionY + eCaption.getBBox().height/4, caption, 'grid-caption');
             }
@@ -329,8 +328,8 @@
 
         function showHalo(chart, series, x, y) {
 
-            var unit = padd*1.2;
-            var d = haloShape(x,y,unit,series.label);
+            const unit = padd*1.2;
+            const d = haloShape(x,y,unit,series.label);
 
             if(d === false) {
                 return false;
@@ -347,7 +346,7 @@
 
 
         function haloShape(x,y,unit,type) {
-            var d=false;
+            let d=false;
             switch(type) {
                 case 'rect':
                     d = 'M '+(x-unit).toFixed(2)+' '+(y-unit).toFixed(2)+' l '+(unit*2)+' 0 l 0 '+(unit*2)+' l '+(-1*unit*2)+' 0 l 0 '+(-1*unit*2)+' Z';
@@ -376,9 +375,9 @@
             x=parseFloat(x);
             y=parseFloat(y);
 
-            var tooltip = c.tooltip;
+            const tooltip = c.tooltip;
 
-            var marker='●';
+            let marker='●';
             switch(labelType) {
                 case 'circle':
                     marker = '●';
@@ -401,19 +400,19 @@
             tooltip.value.innerHTML = value;
 
             // set position text on tooltip
-            var tBox = tooltip.text.getBBox();
+            const tBox = tooltip.text.getBBox();
             tooltip.text.setAttribute('y',tBox.height + padd);
 
-            var wSize = {w:tBox.width+padd*2,h:tBox.height+padd*2};
+            const wSize = {w:tBox.width+padd*2,h:tBox.height+padd*2};
 
             // cr = corner radius
-            var cr=3;
-            var half = parseFloat(wSize.w)/2;
+            const cr=3;
+            const half = parseFloat(wSize.w)/2;
 
-            var d='';
+            let d='';
             // tooltip positioning
 
-            var t={x:false,y:false};
+            const t={x:false,y:false};
             t.y = (y - (wSize.h + padd*3)).toFixed(2);
 
             if(x+half >= c.layout.size().w-padd) {
@@ -439,43 +438,43 @@
 
 
         const onLoadEvents = function(id) {
-            var clip = Charts.list[id].clip;
+            const clip = Charts.list[id].clip;
             clip.setAttribute('width', clip.getAttribute('data-width'));
         }
 
 
         function drawLines(id) {
 
-            var c = Charts.list[id];
+            const c = Charts.list[id];
 
             // coordinates precission
-            var coord = {precission:1};
+            const coord = {precission:1};
 
-            var step = {};
+            const step = {};
             step.y = (c.layout.size().h - (c.offset.t + c.offset.b)) / c.data.global.grid.amp;
             step.x = (c.layout.size().w - (c.offset.l + c.offset.r)) / (c.data.global.len - 1);
 
             c.wrapper = c.layout.g({class:'chart-series-group'});
 
-            var updateZIndex = function(id) {
+            const updateZIndex = function(id) {
 
-                var dst = Charts.list[id].layout.dst;
+                const dst = Charts.list[id].layout.dst;
 
-                var series=dst.getElementsByClassName('chart-series');
+                const series = dst.getElementsByClassName('chart-series');
                 if(series.length == 1) {
                     return;
                 }
 
-                for(var i=0;i<series.length;i++) {
+                for(let i=0;i<series.length;i++) {
                     //console.log(i+' '+series[i]);
                     series[i].setAttribute('data-z-index',(i+1));
                 }
             }
 
             // draw lines
-            for(var i in c.data.series) {
+            for(let i in c.data.series) {
 
-                var s = c.data.series[i];
+                const s = c.data.series[i];
 
                 var seriesGroup;
                 if(s.cls != undefined && s.cls != false) {
@@ -484,18 +483,17 @@
                     seriesGroup = c.layout.g({class:'chart-series'});
                 }
 
-
                 seriesGroup.setAttribute('data-z-index', parseInt(i)+1);
                 seriesGroup.addEventListener('mouseover',function(){
 
-                    var series=c.layout.dst.getElementsByClassName('chart-series');
+                    const series=c.layout.dst.getElementsByClassName('chart-series');
                     if(series.length == 1) return;
 
                     // get current series z-index
-                    var zIndex=parseInt(this.getAttribute('data-z-index'));
+                    const zIndex=parseInt(this.getAttribute('data-z-index'));
 
-                    var lastIndex = series.length-1;
-                    var lastSeries = series[lastIndex];
+                    const lastIndex = series.length-1;
+                    const lastSeries = series[lastIndex];
 
                     if(zIndex != lastIndex+1) {
                         // set chart on last place
@@ -512,10 +510,10 @@
                 }
 
 
-                var dots=s.data;
+                const dots=s.data;
 
-                var prev={x:0, y:0};
-                var d = '';
+                let prev={x:0, y:0};
+                let d = '';
 
                 if(typeof s.showing == 'undefined') {
                     // show animation line on load page
@@ -525,18 +523,18 @@
                 if(typeof s.label == 'undefined') {
                     s.label = false;
                 }
-                var labels = [];
+                let labels = [];
 
-                for(var p=0;p<dots.length;p++) {
+                for(let p=0;p<dots.length;p++) {
 
                     if(dots[p] !== null) {
 
-                        var absValue = dots[p] - c.data.global.grid.min;
+                        const absValue = dots[p] - c.data.global.grid.min;
 
-                        var y = ((c.layout.size().h - c.offset.b) - (absValue * step.y)).toFixed(coord.precission);
-                        var x = (c.offset.l + step.x * p).toFixed(coord.precission);
+                        const y = ((c.layout.size().h - c.offset.b) - (absValue * step.y)).toFixed(coord.precission);
+                        const x = (c.offset.l + step.x * p).toFixed(coord.precission);
 
-                        var moveTo=false;
+                        let moveTo=false;
                         if(p == 0 || (dots[p-1] !== undefined && dots[p-1] === null)) {
                             // check NULL value
                             moveTo = true;
@@ -550,11 +548,11 @@
 
                         if(s.debug !== undefined && s.debug.coordinates == 'relative') {
 
-                            var dx = step.x.toFixed(coord.precission);
+                            let dx = step.x.toFixed(coord.precission);
                             if(moveTo === true) {
                                 dx = 0;
                             }
-                            var dy = (y - prev.y).toFixed(coord.precission);
+                            let dy = (y - prev.y).toFixed(coord.precission);
                             d += ' l ' + dx + ' ' + dy;
                         } else {
                             d += ' L ' + x + ' ' + y;
@@ -572,9 +570,9 @@
                 }
 
                 // add line
-                var line = c.layout.path(d);
+                const line = c.layout.path(d);
 
-                var animate = false;
+                let animate = false;
                 if(s.showing === false) {
                     toggleClass('chart-static', line, true);
                 } else {
@@ -591,13 +589,12 @@
 
                     // grouping labels
                     c.layout.g({class:'chart-labels'});
-                    var hasHalo = false;
+                    let hasHalo = false;
 
-                    for(var l=0;l<labels.length;l++) {
+                    for(let l=0;l<labels.length;l++) {
 
-                        var x=labels[l].x;
-                        var y=labels[l].y;
-
+                        const x=labels[l].x;
+                        const y=labels[l].y;
 
                         if(hasHalo === false) {
                             // add halo
@@ -606,24 +603,25 @@
                         }
 
                         if(s.label == 'circle') {
-                            var d = 'M '+x+' '+y+' m -'+padd/2+' 0 a '+padd/2+' '+padd/2+' 0 1 0 '+padd+' 0 a '+padd/2+' '+padd/2+' 0 1 0 -'+padd+' 0';
+                            d = 'M '+x+' '+y+' m -'+padd/2+' 0 a '+padd/2+' '+padd/2+' 0 1 0 '+padd+' 0 a '+padd/2+' '+padd/2+' 0 1 0 -'+padd+' 0';
                         } else if(s.label == 'rect') {
-                            var d = 'M '+(x-(padd/2))+' '+(y-(padd/2))+' l '+padd+' 0 l 0 '+padd+' l '+(-1*padd)+' 0 l 0 '+(-1*padd)+' Z';
+                            d = 'M '+(x-(padd/2))+' '+(y-(padd/2))+' l '+padd+' 0 l 0 '+padd+' l '+(-1*padd)+' 0 l 0 '+(-1*padd)+' Z';
                         } else {
                             break;
                         }
 
-                        var path = c.layout.path(d, {'transform-origin': x+' '+y});
+                        const path = c.layout.path(d, {'transform-origin': x+' '+y});
 
                         // add hover label events
                         path.addEventListener('mouseover', function(_chart,_s,_x,_y){
                                 return function() {
+
                                     // set halo position and show it
                                     showHalo(_chart,_s,_x,_y);
-                                    var value=this.getAttribute('data-value');
+                                    const value=this.getAttribute('data-value');
 
                                     // show label info popup
-                                    var color = w.getComputedStyle(this).getPropertyValue("stroke");
+                                    const color = w.getComputedStyle(this).getPropertyValue("stroke");
                                     updateTooltip(_chart,_x,_y,_s.name,value,_s.label,color);
 
                                 }
@@ -666,7 +664,7 @@
                 return false;
             }
 
-            var chart = {
+            const chart = {
                 id: id,
                 activateLabel: function(index) {
                     console.log('id: '+id+' activate label: '+index);
@@ -710,7 +708,7 @@
 
     // draw
     const draw = function(el,attr,parent,content){
-        var e = document.createElementNS('http://www.w3.org/2000/svg',el);
+        const e = document.createElementNS('http://www.w3.org/2000/svg',el);
         if(attr != undefined && attr != false) {
             for(var a in attr) {
                 e.setAttribute(a,attr[a]);
@@ -725,17 +723,18 @@
         return e;
     };
 
+    // toggle class
     const toggleClass = function(cls, e, mode) {
 
-        var sCls = e.getAttribute('class');
+        let sCls = e.getAttribute('class');
 
         if(sCls == null) {
             sCls = '';
         }
 
-        var clsList = sCls.replace(/\s{2,}/i, ' ').split(' ').filter(String);
+        let clsList = sCls.replace(/\s{2,}/i, ' ').split(' ').filter(String);
 
-        var index = clsList.indexOf(cls);
+        let index = clsList.indexOf(cls);
         if(mode === true) {
             if (index == -1) {
                 clsList.push(cls);
