@@ -1,0 +1,24 @@
+{
+  "name": "simplycharts",
+  "version": "1.0.0",
+  "description": "Fast and simply SVG charts on native JS.",
+  "main": "src/charts.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yodui/charts.git"
+  },
+  "keywords": ["charts lib", "graphs lib", "SVG charts", "native JS charts", "chart", "graph"],
+  "author": "Stepan Fedorov",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yodui/charts/issues"
+  },
+  "homepage": "https://github.com/yodui/charts#readme"
+}

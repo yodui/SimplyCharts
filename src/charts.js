@@ -574,6 +574,7 @@
 
                 let animate = false;
                 if(s.showing === false) {
+
                     toggleClass('chart-static', line, true);
                 } else {
                     seriesGroup.setAttribute('clip-path', 'url(#'+id+'-clip-boundary)');
